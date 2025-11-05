@@ -1,0 +1,276 @@
+:encoding: utf-8
+:lang: es
+:toc: right
+:toc-title: Tabla de contenidos
+:doctype: book
+:imagesdir: ./images
+:source-highlighter: highlight.js
+
+////
+Nombre - Titulo
+////
+# Práctica 6: Orquestación de Microservicios - Integración con PostgreSQL y RabbitMQ
+Tutorial básico de n8n
+Manel Mena <manel.mena@ual.es>
+
+// Modo no numerado de apartados
+:numbered!: 
+
+[abstract]
+== Resumen
+
+Resumen la Práctica 6
+
+.Objetivos
+
+* Integración de Bases de Datos Relacionales.
+* Comunicación Asíncrona con Colas de Mensajes.
+* Gestión de Redes de Contenedores.
+* Orquestación de Procesos de Negocio.
+* Diseño de Flujos de Trabajo Asíncronos.
+
+// Modo numerado
+:numbered:
+
+== Objetivos de la Práctica
+
+En la práctica anterior, construimos un ecosistema de microservicios completo y funcional utilizando Docker Compose, con una API web, una base de datos PostgreSQL y un bróker de mensajes RabbitMQ. Sin embargo, este sistema existía de forma aislada. Esta práctica cierra el círculo, conectando nuestra instancia de n8n con dicho ecosistema.
+
+El objetivo es posicionar a n8n como el "orquestador" o "pegamento" de alto nivel que consume y coordina estos microservicios. Aprenderemos a interactuar directamente con la base de datos PostgreSQL para persistir y consultar datos, y nos comunicaremos de forma asíncrona con RabbitMQ, tanto para enviar mensajes (producir) como para iniciar flujos de trabajo a partir de mensajes en una cola (consumir).
+
+Al finalizar esta sesión, el estudiante habrá desarrollado las siguientes competencias:
+
+* *Integración de Bases de Datos:* Configurar y utilizar el nodo `PostgreSQL` para realizar operaciones CRUD (Crear, Leer, Actualizar, Borrar) directamente contra la base de datos de un servicio externo.
+* *Comunicación Asíncrona (Producción):* Implementar el nodo `RabbitMQ` (Send) para publicar mensajes en una cola, desacoplando la ejecución del flujo de trabajo de los servicios que procesarán dichos mensajes.
+* *Comunicación Asíncrona (Consumo):* Diseñar flujos de trabajo reactivos que se inician automáticamente al recibir un mensaje, utilizando el `RabbitMQ Trigger`.
+* *Gestión de Redes de Contenedores:* Comprender y solucionar los desafíos de red al conectar contenedores que se ejecutan en diferentes redes de Docker (la instancia de n8n y la pila de Docker Compose).
+* *Orquestación de Procesos de Negocio:* Diseñar flujos de trabajo complejos que actúan como la lógica de negocio central, coordinando múltiples servicios (API, BBDD, colas de mensajes) para completar una tarea.
+
+== Fundamentos Teóricos
+
+=== Integración Directa con Bases de Datos: El Nodo `PostgreSQL`
+
+//[.thumb]
+//.Nodo PostgreSQL
+//image::1.png[Nodo PostgreSQL, align=center, link=""]
+
+Si bien Google Sheets (Práctica 3) es útil para prototipos y tareas sencillas, los sistemas de producción dependen de bases de datos relacionales como PostgreSQL para garantizar la integridad, concurrencia y escalabilidad de los datos. n8n proporciona un nodo `PostgreSQL` dedicado para estas integraciones.
+
+Este nodo abstrae la complejidad de la conexión y permite realizar operaciones comunes:
+
+* **Select:** Ejecuta una consulta `SELECT` y devuelve los resultados como un array de ítems JSON, listos para ser procesados por los siguientes nodos.
+* **Insert:** Inserta uno o más ítems en una tabla especificada. n8n mapea automáticamente las claves JSON a las columnas de la tabla.
+* **Update:** Actualiza filas existentes basándose en una condición.
+* **Delete:** Elimina filas que coinciden con una condición.
+* **Execute Query:** Ofrece control total, permitiendo ejecutar cualquier consulta SQL, incluyendo DDL (ej. `CREATE TABLE`) o consultas complejas con `JOINs`.
+
+El pilar de esta integración es la **credencial de PostgreSQL**, donde se almacena de forma segura el host, puerto, usuario, contraseña y nombre de la base de datos.
+
+=== Flujos Asíncronos: Nodos `RabbitMQ`
+
+En la Práctica 5, introdujimos RabbitMQ para desacoplar nuestra API web del servicio de procesamiento. n8n puede participar en esta arquitectura asíncrona como productor, consumidor, o ambos.
+
+* **`RabbitMQ` (Send) Node:** Este nodo actúa como un **productor**. Se conecta al bróker de mensajes y publica un mensaje en una cola o *exchange* específico. Esto es extremadamente útil para delegar tareas pesadas. Por ejemplo, un flujo de trabajo de n8n puede recibir una petición web, guardar un dato inicial en la base de datos y, en lugar de realizar un procesamiento largo, simplemente enviar un mensaje a RabbitMQ para que un *worker* (ya sea el de Python de la Práctica 5 o otro flujo de n8n) lo procese más tarde.
+
+* **`RabbitMQ Trigger` Node:** Este nodo es un **consumidor**. A diferencia de otros disparadores, este nodo mantiene una conexión persistente con RabbitMQ y "escucha" mensajes en una cola específica. Cuando un mensaje es detectado, el nodo se activa e inicia una nueva ejecución del flujo de trabajo, pasando el contenido del mensaje como datos de entrada. Esto nos permite construir sistemas reactivos, donde n8n puede responder a eventos que ocurren en cualquier parte de nuestra arquitectura de microservicios.
+
+=== El Desafío de la Red: Conectando n8n a la Pila de Docker Compose
+
+Este es el concepto teórico más crítico de esta práctica. Nuestra instancia de n8n (iniciada en la Práctica 1) se ejecuta en su propio contenedor Docker. La pila de microservicios de la Práctica 5 (web, db, mq, worker) se ejecuta en un conjunto separado de contenedores, gestionados por Docker Compose.
+
+Por defecto, Docker Compose crea una **red interna** para su pila de servicios (ej. `task-manager-system_default`). Dentro de esta red, los servicios pueden comunicarse usando sus nombres (ej. la API web se conecta a `db` en el puerto `5432`). Sin embargo, nuestro contenedor de n8n está *fuera* de esa red y no puede resolver el nombre `db` o `mq`.
+
+Tenemos dos soluciones:
+
+1.  **Exponer Puertos (Solución de Desarrollo):** Podríamos exponer los puertos de PostgreSQL (ej. `5433:5432`) y RabbitMQ (`5672:5672`) al `localhost` del host, y hacer que n8n se conecte a `http://localhost:5433`. Esto funciona, pero es frágil y expone servicios innecesariamente.
+
+2.  **Conectar n8n a la Red (Solución de Producción):** La solución más robusta y segura es utilizar Docker para conectar el contenedor de n8n existente a la red de la pila de Docker Compose.
+
+El comando para esto es:
+`docker network connect <nombre_de_la_red_compose> <nombre_del_contenedor_n8n>`
+
+Una vez que n8n está "dentro" de esa red, puede resolver los nombres de servicio `db` y `mq` exactamente igual que los otros microservicios. Esto nos permite usar `db` como el "host" en las credenciales de PostgreSQL, lo cual es limpio y portable.
+
+== Desarrollo del Flujo de Trabajo Guiado
+
+En este ejercicio, conectaremos n8n al sistema de la Práctica 5. n8n leerá datos de la base de datos PostgreSQL, y luego actuará como productor y consumidor de mensajes de RabbitMQ.
+
+=== Paso 1: Preparar el Entorno de Microservicios
+
+1.  Navegue al directorio `task-manager-system` de la Práctica 5.
+2.  Inicie la pila de servicios completa en segundo plano:
+    [source,bash]
+    ----
+    docker-compose up -d --build
+    ----
+3.  Verifique que los cuatro contenedores (`task-manager-web`, `task-manager-worker`, `task-manager-db`, `task-manager-mq`) están en funcionamiento.
+
+=== Paso 2: Conectar n8n a la Red de Microservicios
+
+1.  Averigüe el nombre de la red creada por Docker Compose:
+    [source,bash]
+    ----
+    docker network ls
+    ----
+    Busque un nombre como `task-manager-system_default`.
+
+2.  Averigüe el nombre de su contenedor de n8n (probablemente `n8n`, como se definió en la Práctica 1):
+    [source,bash]
+    ----
+    docker ps
+    ----
+3.  Conecte el contenedor de n8n a la red:
+    [source,bash]
+    ----
+    docker network connect task-manager-system_default n8n
+    ----
+    (Reemplace los nombres si los suyos son diferentes).
+    No hay salida si el comando tiene éxito. Ahora n8n puede comunicarse con `db` y `mq`.
+
+=== Paso 3: Configurar las Credenciales en n8n
+
+1.  **Credencial de PostgreSQL:**
+    * Vaya a "Credentials" en n8n y haga clic en "Add credential".
+    * Busque `PostgreSQL`.
+    * Use los siguientes valores (basados en el `docker-compose.yml` de la Práctica 5):
+        * **Credential Name:** `PostgreSQL (Tasks)`
+        * **Host:** `db`
+        * **Database:** `taskdb`
+        * **User:** `user`
+        * **Password:** `password`
+        * **Port:** `5432`
+        * **SSL:** `false`
+    * Guarde la credencial.
+
+2.  **Credencial de RabbitMQ:**
+    * Añada otra credencial y busque `RabbitMQ`.
+    * Use los siguientes valores:
+        * **Credential Name:** `RabbitMQ (Tasks)`
+        * **Host:** `mq`
+        * **User:** `guest`
+        * **Password:** `guest`
+        * **Port:** `5672`
+    * Guarde la credencial.
+
+=== Paso 4: Flujo 1 - Interacción Directa con la Base de Datos
+
+Vamos a crear un flujo que lee todas las tareas de la base de datos.
+
+1.  Cree un nuevo flujo de trabajo. Comience con un `Manual Trigger`.
+2.  Añada un nodo `PostgreSQL`.
+3.  Configure el nodo:
+    * **Credential:** `PostgreSQL (Tasks)`
+    * **Operation:** `Select`
+    * **Table:** `task` (este es el nombre de la tabla creada por `app.py` en P5).
+4.  Ejecute el nodo (`Test step`). Debería ver una salida JSON con las tareas que haya creado previamente a través de la API (Práctica 5).
+5.  (Opcional) Pruebe la inserción:
+    * Cambie la **Operation** a `Insert`.
+    * **Table:** `task`
+    * En **Columns**, añada dos campos:
+        * `title`: `Tarea creada desde n8n`
+        * `description`: `Prueba de integración directa con BBDD`
+    * Ejecute el nodo.
+    * Vuelva a poner el nodo en modo `Select` y ejecútelo de nuevo. Debería ver su nueva tarea en la lista.
+
+//[.thumb]
+//.Configuración del nodo PostgreSQL
+//image::2.png[Configuración del nodo PostgreSQL, align=center, link=""]
+
+=== Paso 5: Flujo 2 - n8n como Productor y Consumidor (Asíncrono)
+
+Crearemos dos flujos para demostrar el patrón asíncrono.
+
+**Flujo A: El Productor (Webhook -> RabbitMQ)**
+
+Este flujo recibirá una petición web y enviará la tarea a RabbitMQ.
+
+1.  Cree un nuevo flujo de trabajo y nómbrelo "Productor de Tareas".
+2.  Añada un `Webhook Trigger`.
+3.  Copie la URL de *Test* del Webhook.
+4.  Añada un nodo `RabbitMQ` (el de *acción*, no el *trigger*).
+5.  Configure el nodo:
+    * **Credential:** `RabbitMQ (Tasks)`
+    * **Queue:** `task_created` (la misma cola que el worker de P5 escucha).
+    * **Data to Send:** `JSON`
+6.  Asegúrese de que la entrada del nodo `RabbitMQ` esté conectada al `Webhook`. n8n enviará automáticamente los datos JSON del webhook como cuerpo del mensaje.
+7.  Guarde y active este flujo.
+8.  Abra una terminal y use `curl` para probar el webhook, simulando una nueva tarea:
+    [source,bash]
+    ----
+    curl -X POST -H "Content-Type: application/json" \
+         -d '{"title": "Tarea enviada por Webhook n8n", "description": "A cola RabbitMQ"}' \
+         http://<su-ip-n8n>:5678/webhook-test/.....
+    ----
+9.  Mire los logs del `docker-compose` (ejecutando `docker-compose logs -f worker`). Debería ver al *worker de Python* de la Práctica 5 recibir y procesar el mensaje enviado por n8n:
+    `[x] Recibido y procesado nuevo task: ... Título='Tarea enviada por Webhook n8n'`
+
+**Flujo B: El Consumidor (RabbitMQ -> Log)**
+
+Este flujo escuchará en la misma cola y registrará el mensaje.
+
+1.  Cree un nuevo flujo de trabajo y nómbrelo "Consumidor de Tareas".
+2.  Use un `RabbitMQ Trigger` como primer nodo.
+3.  Configure el disparador:
+    * **Credential:** `RabbitMQ (Tasks)`
+    * **Queue:** `task_created`
+4.  Conecte un nodo `Edit Fields (Set)` para simular un procesamiento.
+    * **Name:** `procesado_por`
+    * **Value:** `n8n_consumidor`
+5.  Guarde y active este flujo.
+6.  Vuelva a ejecutar el `curl` del paso anterior.
+7.  Ahora, ocurrirán dos cosas (consumo en competencia):
+    * El worker de Python puede recibir el mensaje (verá el log en `docker-compose logs -f worker`).
+    * O bien, el flujo "Consumidor de Tareas" de n8n recibirá el mensaje.
+8.  Vaya a la pestaña "Executions" de n8n. Debería ver una nueva ejecución para el flujo "Consumidor de Tareas", con los datos de la tarea que envió con `curl`.
+
+//[.thumb]
+//.Configuración del RabbitMQ Trigger
+//image::3.png[Configuración del RabbitMQ Trigger, align=center, link=""]
+
+== Ejercicios Propuestos
+
+=== Ejercicio 1: Eliminación de Tareas (Dificultad: Baja)
+
+*Objetivo:* Crear un flujo de trabajo que elimine una tarea de la base de datos PostgreSQL.
+*Requisitos:*
+
+1.  Cree un flujo que comience con un `Manual Trigger`.
+2.  Añada un nodo `Edit Fields (Set)` para definir la ID de la tarea a eliminar (ej. `{"id_a_borrar": 1}`).
+3.  Use un nodo `PostgreSQL` con la operación `Delete`.
+4.  Configure la condición `WHERE` para que elimine la fila donde `id` sea igual a la expresión `{{ $json.id_a_borrar }}`.
+5.  (Opcional) Añada otro nodo `PostgreSQL` (Select) al final para verificar que la tarea ha sido eliminada.
+
+=== Ejercicio 2: Servicio de Notificación (Dificultad: Media)
+
+*Objetivo:* Re-implementar el "Ejercicio 1" de la Práctica 5, pero usando n8n como el consumidor de la cola `task_completed`.
+*Requisitos:*
+
+1.  Modifique el flujo "Productor de Tareas" (o cree uno nuevo) para que llame al endpoint `PUT /tasks/<id>/complete` de la API web de la Práctica 5 (si no lo implementó, modifique este ejercicio para que su flujo simplemente envíe un mensaje a la cola `task_completed`).
+2.  Cree un nuevo flujo en n8n que comience con un `RabbitMQ Trigger`.
+3.  Configure este trigger para que escuche en la cola `task_completed`.
+4.  Cuando reciba un mensaje, el flujo debe usar un nodo `Send Email` (o Slack, etc.) para notificar que la tarea ha sido completada, incluyendo el título de la tarea en el cuerpo del mensaje.
+5.  Asegúrese de que el `worker` de Python de la P5 *no* esté escuchando en esta cola, para que n8n sea el único consumidor.
+
+=== Ejercicio 3: Reemplazo de la API con Webhook (Dificultad: Alta)
+
+*Objetivo:* Reemplazar completamente la lógica del endpoint `POST /tasks` de la API de Flask con un flujo de trabajo de n8n.
+*Requisitos:*
+
+1.  Cree un nuevo flujo de trabajo que comience con un `Webhook Trigger`.
+2.  El flujo recibirá un JSON con `title` y `description` (igual que la API de Flask).
+3.  Use un nodo `PostgreSQL` (Insert) para insertar la nueva tarea en la tabla `task`.
+4.  Use un nodo `RabbitMQ` (Send) para publicar los datos de la tarea recién creada (incluyendo la `id` devuelta por el nodo de inserción) en la cola `task_created`.
+5.  Configure el nodo `Webhook Trigger` para que responda inmediatamente con los datos de la tarea creada (simulando la respuesta `201 Created` de la API).
+6.  (Bonus) Añada un `IF` para validar que el campo `title` existe, y use un nodo `Stop and Error` si no es así, simulando la respuesta `400 Bad Request`.
+
+== Conclusiones y Avance de la Próxima Práctica
+
+En esta práctica, hemos unificado nuestro ecosistema de microservicios con n8n, demostrando cómo puede actuar como el "pegamento" central de la lógica de negocio. Hemos interactuado directamente con una base de datos PostgreSQL y hemos participado en una arquitectura de comunicación asíncrona con RabbitMQ. n8n ha pasado de ser una herramienta aislada a ser el orquestador principal de un sistema distribuido.
+
+Hemos dominado la lógica basada en reglas (IF, Switch) y la integración de servicios estructurados (APIs, BBDD, Colas). En la próxima práctica, daremos el salto final hacia la lógica moderna basada en modelos.
+
+En la próxima práctica, exploraremos:
+
+* **Uso y Personalización de Modelos de IA:** Introduciremos la integración de modelos de Inteligencia Artificial Generativa en nuestros flujos.
+* **Integración con Modelos Gemini:** Nos centraremos en cómo n8n puede conectarse y orquestar los modelos **Gemini** de Google para realizar tareas avanzadas.
+* **Orquestación de Flujos de IA:** Construiremos flujos de trabajo que utilicen IA para tareas como clasificar el sentimiento de las entradas de los clientes, generar resúmenes automáticos para las tareas en nuestra base de datos PostgreSQL, o crear contenido de forma dinámica.
