@@ -19,15 +19,15 @@ Manel Mena <manel.mena@ual.es>
 [abstract]
 == Resumen
 
-Resumen la Práctica 6
+Esta práctica conecta n8n con el sistema de la Práctica 5: PostgreSQL proporciona persistencia y RabbitMQ permite intercambiar eventos de forma asíncrona. Se configuran las credenciales de ambos servicios, se conecta n8n a la red de Docker Compose y se prueban los flujos de producción y consumo de mensajes, teniendo en cuenta que varios consumidores de una misma cola compiten por sus mensajes.
 
 .Objetivos
 
-* Integración de Bases de Datos Relacionales.
-* Comunicación Asíncrona con Colas de Mensajes.
-* Gestión de Redes de Contenedores.
-* Orquestación de Procesos de Negocio.
-* Diseño de Flujos de Trabajo Asíncronos.
+* Integración de bases de datos relacionales.
+* Comunicación asíncrona con colas de mensajes.
+* Gestión de redes de contenedores.
+* Orquestación de procesos de negocio.
+* Diseño de flujos de trabajo asíncronos.
 
 // Modo numerado
 :numbered:
@@ -70,26 +70,26 @@ El pilar de esta integración es la **credencial de PostgreSQL**, donde se almac
 
 En la Práctica 5, introdujimos RabbitMQ para desacoplar nuestra API web del servicio de procesamiento. n8n puede participar en esta arquitectura asíncrona como productor, consumidor, o ambos.
 
-* **`RabbitMQ` (Send) Node:** Este nodo actúa como un **productor**. Se conecta al bróker de mensajes y publica un mensaje en una cola o *exchange* específico. Esto es extremadamente útil para delegar tareas pesadas. Por ejemplo, un flujo de trabajo de n8n puede recibir una petición web, guardar un dato inicial en la base de datos y, en lugar de realizar un procesamiento largo, simplemente enviar un mensaje a RabbitMQ para que un *worker* (ya sea el de Python de la Práctica 5 o otro flujo de n8n) lo procese más tarde.
+* **`RabbitMQ` (Send) Node:** Este nodo actúa como un **productor**. Se conecta al bróker y publica un mensaje en una cola. Esto permite delegar tareas a un *worker* (por ejemplo, el de Python de la Práctica 5) sin que el flujo espere a que se complete su procesamiento.
 
-* **`RabbitMQ Trigger` Node:** Este nodo es un **consumidor**. A diferencia de otros disparadores, este nodo mantiene una conexión persistente con RabbitMQ y "escucha" mensajes en una cola específica. Cuando un mensaje es detectado, el nodo se activa e inicia una nueva ejecución del flujo de trabajo, pasando el contenido del mensaje como datos de entrada. Esto nos permite construir sistemas reactivos, donde n8n puede responder a eventos que ocurren en cualquier parte de nuestra arquitectura de microservicios.
+* **`RabbitMQ Trigger` Node:** Este nodo es un **consumidor**. Mantiene una conexión con RabbitMQ y escucha mensajes en una cola. Al recibir uno, inicia una ejecución del flujo con el contenido del mensaje. Los consumidores que escuchan la *misma cola* compiten por los mensajes: cada mensaje se entrega a un consumidor, no se duplica automáticamente para todos. Para que varios servicios reciban el mismo evento se necesitan colas distintas enlazadas a un exchange de tipo `fanout` (fuera del alcance de este guion).
 
 === El Desafío de la Red: Conectando n8n a la Pila de Docker Compose
 
 Este es el concepto teórico más crítico de esta práctica. Nuestra instancia de n8n (iniciada en la Práctica 1) se ejecuta en su propio contenedor Docker. La pila de microservicios de la Práctica 5 (web, db, mq, worker) se ejecuta en un conjunto separado de contenedores, gestionados por Docker Compose.
 
-Por defecto, Docker Compose crea una **red interna** para su pila de servicios (ej. `task-manager-system_default`). Dentro de esta red, los servicios pueden comunicarse usando sus nombres (ej. la API web se conecta a `db` en el puerto `5432`). Sin embargo, nuestro contenedor de n8n está *fuera* de esa red y no puede resolver el nombre `db` o `mq`.
+Por defecto, Docker Compose crea una red para la pila de servicios (por ejemplo, `task-manager-service_default`; el nombre exacto depende del directorio y de la versión de Compose). Dentro de esta red, los servicios pueden comunicarse usando sus nombres (por ejemplo, `web` con `db:5432`). Sin embargo, el contenedor de n8n queda fuera de esa red y no puede resolver `db` o `mq` hasta que se conecte a ella.
 
-Tenemos dos soluciones:
+Hay dos alternativas de conexión. En ambos casos, PostgreSQL usa el protocolo PostgreSQL (no HTTP):
 
-1.  **Exponer Puertos (Solución de Desarrollo):** Podríamos exponer los puertos de PostgreSQL (ej. `5433:5432`) y RabbitMQ (`5672:5672`) al `localhost` del host, y hacer que n8n se conecte a `http://localhost:5433`. Esto funciona, pero es frágil y expone servicios innecesariamente.
+1.  **Acceso a través del host (desarrollo):** Si n8n se ejecuta en un contenedor separado, `localhost` apunta al propio contenedor de n8n, no al ordenador anfitrión. En Docker Desktop se puede usar `host.docker.internal` con los puertos publicados por Compose (`5433` para PostgreSQL y `5672` para RabbitMQ). En Linux puede ser necesario configurar explícitamente la puerta de enlace del host. Publicar puertos amplía la superficie de exposición; limítelos a `127.0.0.1` si solo se necesitan desde el host.
 
-2.  **Conectar n8n a la Red (Solución de Producción):** La solución más robusta y segura es utilizar Docker para conectar el contenedor de n8n existente a la red de la pila de Docker Compose.
+2.  **Conectar n8n a la red de Compose (opción recomendada para esta práctica):** Conecte el contenedor de n8n a la red de la pila. Así podrá usar `db:5432` y `mq:5672`, sin publicar esos puertos para n8n. Este procedimiento manual puede perderse si se elimina y recrea el contenedor de n8n; para despliegues persistentes, declare una red compartida en la configuración de ambos proyectos.
 
 El comando para esto es:
 `docker network connect <nombre_de_la_red_compose> <nombre_del_contenedor_n8n>`
 
-Una vez que n8n está "dentro" de esa red, puede resolver los nombres de servicio `db` y `mq` exactamente igual que los otros microservicios. Esto nos permite usar `db` como el "host" en las credenciales de PostgreSQL, lo cual es limpio y portable.
+Una vez que n8n está conectado a esa red, puede resolver los nombres de servicio `db` y `mq`. Use esos nombres como host en las credenciales y los puertos internos, no los puertos publicados al host.
 
 == Desarrollo del Flujo de Trabajo Guiado
 
@@ -97,13 +97,17 @@ En este ejercicio, conectaremos n8n al sistema de la Práctica 5. n8n leerá dat
 
 === Paso 1: Preparar el Entorno de Microservicios
 
-1.  Navegue al directorio `task-manager-system` de la Práctica 5.
+1.  Navegue al directorio `task-manager-service` de la Práctica 5.
 2.  Inicie la pila de servicios completa en segundo plano:
     [source,bash]
     ----
-    docker-compose up -d --build
+    docker compose up -d --build
     ----
-3.  Verifique que los cuatro contenedores (`task-manager-web`, `task-manager-worker`, `task-manager-db`, `task-manager-mq`) están en funcionamiento.
+3.  Verifique que los cuatro contenedores (`task-manager-web`, `task-manager-worker`, `task-manager-db`, `task-manager-mq`) están en funcionamiento y saludables:
+    [source,bash]
+    ----
+    docker compose ps
+    ----
 
 === Paso 2: Conectar n8n a la Red de Microservicios
 
@@ -112,7 +116,7 @@ En este ejercicio, conectaremos n8n al sistema de la Práctica 5. n8n leerá dat
     ----
     docker network ls
     ----
-    Busque un nombre como `task-manager-system_default`.
+    Busque la red del proyecto, normalmente `task-manager-service_default` (el separador puede variar según la versión de Compose).
 
 2.  Averigüe el nombre de su contenedor de n8n (probablemente `n8n`, como se definió en la Práctica 1):
     [source,bash]
@@ -122,7 +126,7 @@ En este ejercicio, conectaremos n8n al sistema de la Práctica 5. n8n leerá dat
 3.  Conecte el contenedor de n8n a la red:
     [source,bash]
     ----
-    docker network connect task-manager-system_default n8n
+    docker network connect <nombre_real_de_la_red> <nombre_real_del_contenedor_n8n>
     ----
     (Reemplace los nombres si los suyos son diferentes).
     No hay salida si el comando tiene éxito. Ahora n8n puede comunicarse con `db` y `mq`.
@@ -147,9 +151,10 @@ En este ejercicio, conectaremos n8n al sistema de la Práctica 5. n8n leerá dat
     * Use los siguientes valores:
         * **Credential Name:** `RabbitMQ (Tasks)`
         * **Host:** `mq`
-        * **User:** `guest`
-        * **Password:** `guest`
+        * **User:** `task_user`
+        * **Password:** `task_password`
         * **Port:** `5672`
+        * **Virtual Host:** `/`
     * Guarde la credencial.
 
 === Paso 4: Flujo 1 - Interacción Directa con la Base de Datos
@@ -186,23 +191,24 @@ Este flujo recibirá una petición web y enviará la tarea a RabbitMQ.
 
 1.  Cree un nuevo flujo de trabajo y nómbrelo "Productor de Tareas".
 2.  Añada un `Webhook Trigger`.
-3.  Copie la URL de *Test* del Webhook.
+3.  Para probarlo, pulse *Listen for test event* en el nodo y copie la *Test URL*. Esta URL solo está disponible mientras n8n está escuchando el evento de prueba. Para una ejecución activa, use la *Production URL* (ruta `/webhook/`, no `/webhook-test/`).
+    Mantenga este webhook sin autenticación únicamente para la prueba local; si se expone fuera del equipo, configure autenticación en el nodo.
 4.  Añada un nodo `RabbitMQ` (el de *acción*, no el *trigger*).
 5.  Configure el nodo:
     * **Credential:** `RabbitMQ (Tasks)`
+    * **Operation:** `Send a Message to RabbitMQ`.
     * **Queue:** `task_created` (la misma cola que el worker de P5 escucha).
-    * **Data to Send:** `JSON`
-6.  Asegúrese de que la entrada del nodo `RabbitMQ` esté conectada al `Webhook`. n8n enviará automáticamente los datos JSON del webhook como cuerpo del mensaje.
-7.  Guarde y active este flujo.
-8.  Abra una terminal y use `curl` para probar el webhook, simulando una nueva tarea:
+    * En el parámetro **Message**, envíe el cuerpo como JSON. En el Webhook Trigger, el cuerpo suele estar en `{{ $json.body }}`; si el parámetro requiere texto, use `{{ JSON.stringify($json.body) }}`.
+6.  Guarde el flujo. Para probar con la *Test URL*, deje abierto *Listen for test event*; para usar la *Production URL*, publique/active el flujo.
+7.  Abra una terminal y use `curl` con la URL copiada del nodo:
     [source,bash]
     ----
     curl -X POST -H "Content-Type: application/json" \
          -d '{"title": "Tarea enviada por Webhook n8n", "description": "A cola RabbitMQ"}' \
-         http://<su-ip-n8n>:5678/webhook-test/.....
+         http://<host-accesible-de-n8n>:5678/webhook-test/<ruta-mostrada-en-el-nodo>
     ----
-9.  Mire los logs del `docker-compose` (ejecutando `docker-compose logs -f worker`). Debería ver al *worker de Python* de la Práctica 5 recibir y procesar el mensaje enviado por n8n:
-    `[x] Recibido y procesado nuevo task: ... Título='Tarea enviada por Webhook n8n'`
+    Si usa la URL de producción, sustituya `/webhook-test/` por `/webhook/` y asegúrese de que el flujo esté activo.
+8.  Mire los logs de Compose (ejecutando `docker compose logs -f worker`). El *worker de Python* de la Práctica 5 debería registrar `Tarea recibida: ID=None, Título='Tarea enviada por Webhook n8n'`. El mensaje enviado directamente a RabbitMQ no crea por sí mismo una fila en PostgreSQL.
 
 **Flujo B: El Consumidor (RabbitMQ -> Log)**
 
@@ -216,12 +222,12 @@ Este flujo escuchará en la misma cola y registrará el mensaje.
 4.  Conecte un nodo `Edit Fields (Set)` para simular un procesamiento.
     * **Name:** `procesado_por`
     * **Value:** `n8n_consumidor`
+    * Active **Include Other Input Fields** para conservar el contenido del mensaje en la salida.
 5.  Guarde y active este flujo.
-6.  Vuelva a ejecutar el `curl` del paso anterior.
-7.  Ahora, ocurrirán dos cosas (consumo en competencia):
-    * El worker de Python puede recibir el mensaje (verá el log en `docker-compose logs -f worker`).
-    * O bien, el flujo "Consumidor de Tareas" de n8n recibirá el mensaje.
-8.  Vaya a la pestaña "Executions" de n8n. Debería ver una nueva ejecución para el flujo "Consumidor de Tareas", con los datos de la tarea que envió con `curl`.
+6.  Para observar el consumo por n8n sin competencia, detenga temporalmente el worker de Python con `docker compose stop worker`.
+7.  Active el flujo "Consumidor de Tareas" y envíe un mensaje nuevo con el `curl` del flujo A. Si vuelve a usar la *Test URL*, pulse antes *Listen for test event* otra vez; la URL de producción puede reutilizarse mientras el flujo esté activo.
+8.  Vaya a "Executions" en n8n e inspeccione el mensaje recibido.
+9.  Reinicie el worker con `docker compose start worker`. Si ambos consumidores están activos al mismo tiempo, cada mensaje lo recibirá solo uno de ellos; RabbitMQ no lo duplica.
 
 //[.thumb]
 //.Configuración del RabbitMQ Trigger
@@ -249,19 +255,19 @@ Este flujo escuchará en la misma cola y registrará el mensaje.
 2.  Cree un nuevo flujo en n8n que comience con un `RabbitMQ Trigger`.
 3.  Configure este trigger para que escuche en la cola `task_completed`.
 4.  Cuando reciba un mensaje, el flujo debe usar un nodo `Send Email` (o Slack, etc.) para notificar que la tarea ha sido completada, incluyendo el título de la tarea en el cuerpo del mensaje.
-5.  Asegúrese de que el `worker` de Python de la P5 *no* esté escuchando en esta cola, para que n8n sea el único consumidor.
+5.  En la implementación de referencia de P5, el worker de Python también escucha en `task_completed`. Deténgalo temporalmente (`docker compose stop worker`) o quite ese consumidor mientras prueba n8n; si ambos están activos competirán por los mensajes y cada mensaje se entregará a uno solo.
 
 === Ejercicio 3: Reemplazo de la API con Webhook (Dificultad: Alta)
 
 *Objetivo:* Reemplazar completamente la lógica del endpoint `POST /tasks` de la API de Flask con un flujo de trabajo de n8n.
 *Requisitos:*
 
-1.  Cree un nuevo flujo de trabajo que comience con un `Webhook Trigger`.
-2.  El flujo recibirá un JSON con `title` y `description` (igual que la API de Flask).
-3.  Use un nodo `PostgreSQL` (Insert) para insertar la nueva tarea en la tabla `task`.
-4.  Use un nodo `RabbitMQ` (Send) para publicar los datos de la tarea recién creada (incluyendo la `id` devuelta por el nodo de inserción) en la cola `task_created`.
-5.  Configure el nodo `Webhook Trigger` para que responda inmediatamente con los datos de la tarea creada (simulando la respuesta `201 Created` de la API).
-6.  (Bonus) Añada un `IF` para validar que el campo `title` existe, y use un nodo `Stop and Error` si no es así, simulando la respuesta `400 Bad Request`.
+1.  Cree un flujo con un `Webhook Trigger` configurado para `POST` y una ruta propia (por ejemplo, `tasks-from-n8n`). El cuerpo recibido tendrá `title` y `description`, accesibles normalmente como `{{ $json.body.title }}` y `{{ $json.body.description }}`.
+2.  Valide que `title` sea una cadena no vacía. Para datos inválidos, devuelva una respuesta HTTP `400` mediante un nodo `Respond to Webhook`; `Stop and Error` detiene la ejecución con error, pero no genera por sí mismo una respuesta `400` controlada.
+3.  En la rama válida, use un nodo `PostgreSQL` (`Insert`) para insertar en `task` las columnas `title` y `description`. Compruebe que el resultado del nodo incluye la fila insertada y su `id`; si usa una consulta, utilice `INSERT ... RETURNING id, title, description, done` y parámetros en vez de concatenar valores en SQL.
+4.  Use un nodo `RabbitMQ` para publicar la fila insertada como JSON en `task_created`. El mensaje debe conservar los campos superiores `id`, `title`, `description` y `done`, ya que el worker de P5 espera `title` en el objeto raíz.
+5.  En el Webhook seleccione la respuesta *Using 'Respond to Webhook' Node*. Conecte un nodo `Respond to Webhook` después de la inserción y la publicación; devuelva la tarea creada y el código HTTP `201`. No seleccione *Immediately*, porque esa opción solo devuelve `Workflow got started` sin esperar los datos.
+6.  Pruebe el endpoint con la *Test URL* mientras el nodo está en *Listen for test event*. Para uso normal, active el flujo y llame a la *Production URL* (`/webhook/...`).
 
 == Conclusiones y Avance de la Próxima Práctica
 

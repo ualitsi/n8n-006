@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.22">
+<meta name="generator" content="Asciidoctor.js 4.0.6">
 <meta name="author" content="Tutorial básico de n8n">
 <title>Práctica 6: Orquestación de Microservicios - Integración con PostgreSQL y RabbitMQ</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CNoto+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
 /* Uncomment the following line when using as a custom stylesheet */
@@ -95,10 +95,10 @@ dl dd{margin-bottom:1.25em}
 blockquote{margin:0 0 1.25em;padding:.5625em 1.25em 0 1.1875em;border-left:1px solid #ddd}
 blockquote,blockquote p{line-height:1.6;color:rgba(0,0,0,.85)}
 @media screen and (min-width:768px){h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.2}
-h1{font-size:2.75em}
-h2{font-size:2.3125em}
-h3,#toctitle,.sidebarblock>.content>.title{font-size:1.6875em}
-h4{font-size:1.4375em}}
+  h1{font-size:2.75em}
+  h2{font-size:2.3125em}
+  h3,#toctitle,.sidebarblock>.content>.title{font-size:1.6875em}
+  h4{font-size:1.4375em}}
 table{background:#fff;margin-bottom:1.25em;border:1px solid #dedede;word-wrap:normal}
 table thead,table tfoot{background:#f7f8f7}
 table thead tr th,table thead tr td,table tfoot tr th,table tfoot tr td{padding:.5em .625em .625em;font-size:inherit;color:rgba(0,0,0,.8);text-align:left}
@@ -117,7 +117,6 @@ h1 strong,h2 strong,h3 strong,#toctitle strong,.sidebarblock>.content>.title str
 :not(pre):not([class^=L])>code{font-size:.9375em;font-style:normal!important;letter-spacing:0;padding:.1em .5ex;word-spacing:-.15em;background:#f7f7f8;border-radius:4px;line-height:1.45;text-rendering:optimizeSpeed}
 pre{color:rgba(0,0,0,.9);font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;line-height:1.45;text-rendering:optimizeSpeed}
 pre code,pre pre{color:inherit;font-size:inherit;line-height:inherit}
-pre>code{display:block}
 pre.nowrap,pre.nowrap pre{white-space:pre;word-wrap:normal}
 em em{font-style:normal}
 strong strong{font-weight:400}
@@ -162,21 +161,21 @@ p a>code:hover{color:rgba(0,0,0,.9)}
 #toc a:active{text-decoration:underline}
 #toctitle{color:#7a2518;font-size:1.2em}
 @media screen and (min-width:768px){#toctitle{font-size:1.375em}
-body.toc2{padding-left:15em;padding-right:0}
-body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #dddddf;padding-bottom:8px}
-#toc.toc2{margin-top:0!important;background:#f8f8f7;position:fixed;width:15em;left:0;top:0;border-right:1px solid #e7e7e9;border-top-width:0!important;border-bottom-width:0!important;z-index:1000;padding:1.25em 1em;height:100%;overflow:auto}
-#toc.toc2 #toctitle{margin-top:0;margin-bottom:.8rem;font-size:1.2em}
-#toc.toc2>ul{font-size:.9em;margin-bottom:0}
-#toc.toc2 ul ul{margin-left:0;padding-left:1em}
-#toc.toc2 ul.sectlevel0 ul.sectlevel1{padding-left:0;margin-top:.5em;margin-bottom:.5em}
-body.toc2.toc-right{padding-left:0;padding-right:15em}
-body.toc2.toc-right #toc.toc2{border-right-width:0;border-left:1px solid #e7e7e9;left:auto;right:0}}
+  body.toc2{padding-left:15em;padding-right:0}
+  body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #dddddf;padding-bottom:8px}
+  #toc.toc2{margin-top:0!important;background:#f8f8f7;position:fixed;width:15em;left:0;top:0;border-right:1px solid #e7e7e9;border-top-width:0!important;border-bottom-width:0!important;z-index:1000;padding:1.25em 1em;height:100%;overflow:auto}
+  #toc.toc2 #toctitle{margin-top:0;margin-bottom:.8rem;font-size:1.2em}
+  #toc.toc2>ul{font-size:.9em;margin-bottom:0}
+  #toc.toc2 ul ul{margin-left:0;padding-left:1em}
+  #toc.toc2 ul.sectlevel0 ul.sectlevel1{padding-left:0;margin-top:.5em;margin-bottom:.5em}
+  body.toc2.toc-right{padding-left:0;padding-right:15em}
+  body.toc2.toc-right #toc.toc2{border-right-width:0;border-left:1px solid #e7e7e9;left:auto;right:0}}
 @media screen and (min-width:1280px){body.toc2{padding-left:20em;padding-right:0}
-#toc.toc2{width:20em}
-#toc.toc2 #toctitle{font-size:1.375em}
-#toc.toc2>ul{font-size:.95em}
-#toc.toc2 ul ul{padding-left:1.25em}
-body.toc2.toc-right{padding-left:0;padding-right:20em}}
+  #toc.toc2{width:20em}
+  #toc.toc2 #toctitle{font-size:1.375em}
+  #toc.toc2>ul{font-size:.95em}
+  #toc.toc2 ul ul{padding-left:1.25em}
+  body.toc2.toc-right{padding-left:0;padding-right:20em}}
 #content #toc{border:1px solid #e0e0dc;margin-bottom:1.25em;padding:1.25em;background:#f8f8f7;border-radius:4px}
 #content #toc>:first-child{margin-top:0}
 #content #toc>:last-child{margin-bottom:0}
@@ -185,7 +184,7 @@ body.toc2.toc-right{padding-left:0;padding-right:20em}}
 #content{margin-bottom:.625em}
 .sect1{padding-bottom:.625em}
 @media screen and (min-width:768px){#content{margin-bottom:1.25em}
-.sect1{padding-bottom:1.25em}}
+  .sect1{padding-bottom:1.25em}}
 .sect1:last-child{padding-bottom:0}
 .sect1+.sect1{border-top:1px solid #e7e7e9}
 #content h1>a.anchor,h2>a.anchor,h3>a.anchor,#toctitle>a.anchor,.sidebarblock>.content>.title>a.anchor,h4>a.anchor,h5>a.anchor,h6>a.anchor{position:absolute;z-index:1001;width:1.5ex;margin-left:-1.5ex;display:block;text-decoration:none!important;visibility:hidden;text-align:center;font-weight:400}
@@ -220,6 +219,7 @@ table.tableblock.fit-content>caption.title{white-space:nowrap;width:0}
 .literalblock pre,.listingblock>.content>pre:not(.highlight),.listingblock>.content>pre[class=highlight],.listingblock>.content>pre[class^="highlight "]{background:#f7f7f8}
 .literalblock.output pre{color:#f7f7f8;background:rgba(0,0,0,.9)}
 .listingblock>.content{position:relative}
+.listingblock pre>code{display:block}
 .listingblock code[data-lang]::before{display:none;content:attr(data-lang);position:absolute;font-size:.75em;top:.425rem;right:.5rem;line-height:1;text-transform:uppercase;color:inherit;opacity:.5}
 .listingblock:hover code[data-lang]::before{display:block}
 .listingblock.terminal pre .command::before{content:attr(data-prompt);padding-right:.5em;color:inherit;opacity:.5}
@@ -399,39 +399,39 @@ p{margin-bottom:1.25rem}
 .print-only{display:none!important}
 @page{margin:1.25cm .75cm}
 @media print{*{box-shadow:none!important;text-shadow:none!important}
-html{font-size:80%}
-a{color:inherit!important;text-decoration:underline!important}
-a.bare,a[href^="#"],a[href^="mailto:"]{text-decoration:none!important}
-a[href^="http:"]:not(.bare)::after,a[href^="https:"]:not(.bare)::after{content:"(" attr(href) ")";display:inline-block;font-size:.875em;padding-left:.25em}
-abbr[title]{border-bottom:1px dotted}
-abbr[title]::after{content:" (" attr(title) ")"}
-pre,blockquote,tr,img,object,svg{page-break-inside:avoid}
-thead{display:table-header-group}
-svg{max-width:100%}
-p,blockquote,dt,td.content{font-size:1em;orphans:3;widows:3}
-h2,h3,#toctitle,.sidebarblock>.content>.title{page-break-after:avoid}
-#header,#content,#footnotes,#footer{max-width:none}
-#toc,.sidebarblock,.exampleblock>.content{background:none!important}
-#toc{border-bottom:1px solid #dddddf!important;padding-bottom:0!important}
-body.book #header{text-align:center}
-body.book #header>h1:first-child{border:0!important;margin:2.5em 0 1em}
-body.book #header .details{border:0!important;display:block;padding:0!important}
-body.book #header .details span:first-child{margin-left:0!important}
-body.book #header .details br{display:block}
-body.book #header .details br+span::before{content:none!important}
-body.book #toc{border:0!important;text-align:left!important;padding:0!important;margin:0!important}
-body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-break-before:always}
-.listingblock code[data-lang]::before{display:block}
-#footer{padding:0 .9375em}
-.hide-on-print{display:none!important}
-.print-only{display:block!important}
-.hide-for-print{display:none!important}
-.show-for-print{display:inherit!important}}
+  html{font-size:80%}
+  a{color:inherit!important;text-decoration:underline!important}
+  a.bare,a[href^="#"],a[href^="mailto:"]{text-decoration:none!important}
+  a[href^="http:"]:not(.bare)::after,a[href^="https:"]:not(.bare)::after{content:"(" attr(href) ")";display:inline-block;font-size:.875em;padding-left:.25em}
+  abbr[title]{border-bottom:1px dotted}
+  abbr[title]::after{content:" (" attr(title) ")"}
+  pre,blockquote,tr,img,object,svg{page-break-inside:avoid}
+  thead{display:table-header-group}
+  svg{max-width:100%}
+  p,blockquote,dt,td.content{font-size:1em;orphans:3;widows:3}
+  h2,h3,#toctitle,.sidebarblock>.content>.title{page-break-after:avoid}
+  #header,#content,#footnotes,#footer{max-width:none}
+  #toc,.sidebarblock,.exampleblock>.content{background:none!important}
+  #toc{border-bottom:1px solid #dddddf!important;padding-bottom:0!important}
+  body.book #header{text-align:center}
+  body.book #header>h1:first-child{border:0!important;margin:2.5em 0 1em}
+  body.book #header .details{border:0!important;display:block;padding:0!important}
+  body.book #header .details span:first-child{margin-left:0!important}
+  body.book #header .details br{display:block}
+  body.book #header .details br+span::before{content:none!important}
+  body.book #toc{border:0!important;text-align:left!important;padding:0!important;margin:0!important}
+  body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-break-before:always}
+  .listingblock code[data-lang]::before{display:block}
+  #footer{padding:0 .9375em}
+  .hide-on-print{display:none!important}
+  .print-only{display:block!important}
+  .hide-for-print{display:none!important}
+  .show-for-print{display:inherit!important}}
 @media amzn-kf8,print{#header>h1:first-child{margin-top:1.25rem}
-.sect1{padding:0!important}
-.sect1+.sect1{border:0}
-#footer{background:none}
-#footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
+  .sect1{padding:0!important}
+  .sect1+.sect1{border:0}
+  #footer{background:none}
+  #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/github.min.css">
@@ -480,25 +480,25 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_resumen">Resumen</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Resumen la Práctica 6</p>
+<p>Esta práctica conecta n8n con el sistema de la Práctica 5: PostgreSQL proporciona persistencia y RabbitMQ permite intercambiar eventos de forma asíncrona. Se configuran las credenciales de ambos servicios, se conecta n8n a la red de Docker Compose y se prueban los flujos de producción y consumo de mensajes, teniendo en cuenta que varios consumidores de una misma cola compiten por sus mensajes.</p>
 </div>
 <div class="ulist">
 <div class="title">Objetivos</div>
 <ul>
 <li>
-<p>Integración de Bases de Datos Relacionales.</p>
+<p>Integración de bases de datos relacionales.</p>
 </li>
 <li>
-<p>Comunicación Asíncrona con Colas de Mensajes.</p>
+<p>Comunicación asíncrona con colas de mensajes.</p>
 </li>
 <li>
-<p>Gestión de Redes de Contenedores.</p>
+<p>Gestión de redes de contenedores.</p>
 </li>
 <li>
-<p>Orquestación de Procesos de Negocio.</p>
+<p>Orquestación de procesos de negocio.</p>
 </li>
 <li>
-<p>Diseño de Flujos de Trabajo Asíncronos.</p>
+<p>Diseño de flujos de trabajo asíncronos.</p>
 </li>
 </ul>
 </div>
@@ -579,10 +579,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p><strong><code>RabbitMQ</code> (Send) Node:</strong> Este nodo actúa como un <strong>productor</strong>. Se conecta al bróker de mensajes y publica un mensaje en una cola o <strong>exchange</strong> específico. Esto es extremadamente útil para delegar tareas pesadas. Por ejemplo, un flujo de trabajo de n8n puede recibir una petición web, guardar un dato inicial en la base de datos y, en lugar de realizar un procesamiento largo, simplemente enviar un mensaje a RabbitMQ para que un <strong>worker</strong> (ya sea el de Python de la Práctica 5 o otro flujo de n8n) lo procese más tarde.</p>
+<p><strong><code>RabbitMQ</code> (Send) Node:</strong> Este nodo actúa como un <strong>productor</strong>. Se conecta al bróker y publica un mensaje en una cola. Esto permite delegar tareas a un <strong>worker</strong> (por ejemplo, el de Python de la Práctica 5) sin que el flujo espere a que se complete su procesamiento.</p>
 </li>
 <li>
-<p><strong><code>RabbitMQ Trigger</code> Node:</strong> Este nodo es un <strong>consumidor</strong>. A diferencia de otros disparadores, este nodo mantiene una conexión persistente con RabbitMQ y "escucha" mensajes en una cola específica. Cuando un mensaje es detectado, el nodo se activa e inicia una nueva ejecución del flujo de trabajo, pasando el contenido del mensaje como datos de entrada. Esto nos permite construir sistemas reactivos, donde n8n puede responder a eventos que ocurren en cualquier parte de nuestra arquitectura de microservicios.</p>
+<p><strong><code>RabbitMQ Trigger</code> Node:</strong> Este nodo es un <strong>consumidor</strong>. Mantiene una conexión con RabbitMQ y escucha mensajes en una cola. Al recibir uno, inicia una ejecución del flujo con el contenido del mensaje. Los consumidores que escuchan la <strong>misma cola</strong> compiten por los mensajes: cada mensaje se entrega a un consumidor, no se duplica automáticamente para todos. Para que varios servicios reciban el mismo evento se necesitan colas distintas enlazadas a un exchange de tipo <code>fanout</code> (fuera del alcance de este guion).</p>
 </li>
 </ul>
 </div>
@@ -593,18 +593,18 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Este es el concepto teórico más crítico de esta práctica. Nuestra instancia de n8n (iniciada en la Práctica 1) se ejecuta en su propio contenedor Docker. La pila de microservicios de la Práctica 5 (web, db, mq, worker) se ejecuta en un conjunto separado de contenedores, gestionados por Docker Compose.</p>
 </div>
 <div class="paragraph">
-<p>Por defecto, Docker Compose crea una <strong>red interna</strong> para su pila de servicios (ej. <code>task-manager-system_default</code>). Dentro de esta red, los servicios pueden comunicarse usando sus nombres (ej. la API web se conecta a <code>db</code> en el puerto <code>5432</code>). Sin embargo, nuestro contenedor de n8n está <strong>fuera</strong> de esa red y no puede resolver el nombre <code>db</code> o <code>mq</code>.</p>
+<p>Por defecto, Docker Compose crea una red para la pila de servicios (por ejemplo, <code>task-manager-service_default</code>; el nombre exacto depende del directorio y de la versión de Compose). Dentro de esta red, los servicios pueden comunicarse usando sus nombres (por ejemplo, <code>web</code> con <code>db:5432</code>). Sin embargo, el contenedor de n8n queda fuera de esa red y no puede resolver <code>db</code> o <code>mq</code> hasta que se conecte a ella.</p>
 </div>
 <div class="paragraph">
-<p>Tenemos dos soluciones:</p>
+<p>Hay dos alternativas de conexión. En ambos casos, PostgreSQL usa el protocolo PostgreSQL (no HTTP):</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Exponer Puertos (Solución de Desarrollo):</strong> Podríamos exponer los puertos de PostgreSQL (ej. <code>5433:5432</code>) y RabbitMQ (<code>5672:5672</code>) al <code>localhost</code> del host, y hacer que n8n se conecte a <code><a href="http://localhost:5433" class="bare">http://localhost:5433</a></code>. Esto funciona, pero es frágil y expone servicios innecesariamente.</p>
+<p><strong>Acceso a través del host (desarrollo):</strong> Si n8n se ejecuta en un contenedor separado, <code>localhost</code> apunta al propio contenedor de n8n, no al ordenador anfitrión. En Docker Desktop se puede usar <code>host.docker.internal</code> con los puertos publicados por Compose (<code>5433</code> para PostgreSQL y <code>5672</code> para RabbitMQ). En Linux puede ser necesario configurar explícitamente la puerta de enlace del host. Publicar puertos amplía la superficie de exposición; limítelos a <code>127.0.0.1</code> si solo se necesitan desde el host.</p>
 </li>
 <li>
-<p><strong>Conectar n8n a la Red (Solución de Producción):</strong> La solución más robusta y segura es utilizar Docker para conectar el contenedor de n8n existente a la red de la pila de Docker Compose.</p>
+<p><strong>Conectar n8n a la red de Compose (opción recomendada para esta práctica):</strong> Conecte el contenedor de n8n a la red de la pila. Así podrá usar <code>db:5432</code> y <code>mq:5672</code>, sin publicar esos puertos para n8n. Este procedimiento manual puede perderse si se elimina y recrea el contenedor de n8n; para despliegues persistentes, declare una red compartida en la configuración de ambos proyectos.</p>
 </li>
 </ol>
 </div>
@@ -613,7 +613,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <code>docker network connect &lt;nombre_de_la_red_compose&gt; &lt;nombre_del_contenedor_n8n&gt;</code></p>
 </div>
 <div class="paragraph">
-<p>Una vez que n8n está "dentro" de esa red, puede resolver los nombres de servicio <code>db</code> y <code>mq</code> exactamente igual que los otros microservicios. Esto nos permite usar <code>db</code> como el "host" en las credenciales de PostgreSQL, lo cual es limpio y portable.</p>
+<p>Una vez que n8n está conectado a esa red, puede resolver los nombres de servicio <code>db</code> y <code>mq</code>. Use esos nombres como host en las credenciales y los puertos internos, no los puertos publicados al host.</p>
 </div>
 </div>
 </div>
@@ -629,17 +629,21 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Navegue al directorio <code>task-manager-system</code> de la Práctica 5.</p>
+<p>Navegue al directorio <code>task-manager-service</code> de la Práctica 5.</p>
 </li>
 <li>
 <p>Inicie la pila de servicios completa en segundo plano:
 [source,bash]
 ----
-docker-compose up -d --build
+docker compose up -d --build
 ----</p>
 </li>
 <li>
-<p>Verifique que los cuatro contenedores (<code>task-manager-web</code>, <code>task-manager-worker</code>, <code>task-manager-db</code>, <code>task-manager-mq</code>) están en funcionamiento.</p>
+<p>Verifique que los cuatro contenedores (<code>task-manager-web</code>, <code>task-manager-worker</code>, <code>task-manager-db</code>, <code>task-manager-mq</code>) están en funcionamiento y saludables:
+[source,bash]
+----
+docker compose ps
+----</p>
 </li>
 </ol>
 </div>
@@ -654,7 +658,7 @@ docker-compose up -d --build
 ----
 docker network ls
 ----
-Busque un nombre como <code>task-manager-system_default</code>.</p>
+Busque la red del proyecto, normalmente <code>task-manager-service_default</code> (el separador puede variar según la versión de Compose).</p>
 </li>
 <li>
 <p>Averigüe el nombre de su contenedor de n8n (probablemente <code>n8n</code>, como se definió en la Práctica 1):
@@ -667,7 +671,7 @@ docker ps
 <p>Conecte el contenedor de n8n a la red:
 [source,bash]
 ----
-docker network connect task-manager-system_default n8n
+docker network connect &lt;nombre_real_de_la_red&gt; &lt;nombre_real_del_contenedor_n8n&gt;
 ----
 (Reemplace los nombres si los suyos son diferentes).
 No hay salida si el comando tiene éxito. Ahora n8n puede comunicarse con <code>db</code> y <code>mq</code>.</p>
@@ -736,13 +740,16 @@ No hay salida si el comando tiene éxito. Ahora n8n puede comunicarse con <code>
 <p><strong>Host:</strong> <code>mq</code></p>
 </li>
 <li>
-<p><strong>User:</strong> <code>guest</code></p>
+<p><strong>User:</strong> <code>task_user</code></p>
 </li>
 <li>
-<p><strong>Password:</strong> <code>guest</code></p>
+<p><strong>Password:</strong> <code>task_password</code></p>
 </li>
 <li>
 <p><strong>Port:</strong> <code>5672</code></p>
+</li>
+<li>
+<p><strong>Virtual Host:</strong> <code>/</code></p>
 </li>
 <li>
 <p>Guarde la credencial.</p>
@@ -836,7 +843,8 @@ No hay salida si el comando tiene éxito. Ahora n8n puede comunicarse con <code>
 <p>Añada un <code>Webhook Trigger</code>.</p>
 </li>
 <li>
-<p>Copie la URL de <strong>Test</strong> del Webhook.</p>
+<p>Para probarlo, pulse <strong>Listen for test event</strong> en el nodo y copie la <strong>Test URL</strong>. Esta URL solo está disponible mientras n8n está escuchando el evento de prueba. Para una ejecución activa, use la <strong>Production URL</strong> (ruta <code>/webhook/</code>, no <code>/webhook-test/</code>).
+Mantenga este webhook sin autenticación únicamente para la prueba local; si se expone fuera del equipo, configure autenticación en el nodo.</p>
 </li>
 <li>
 <p>Añada un nodo <code>RabbitMQ</code> (el de <strong>acción</strong>, no el <strong>trigger</strong>).</p>
@@ -849,32 +857,32 @@ No hay salida si el comando tiene éxito. Ahora n8n puede comunicarse con <code>
 <p><strong>Credential:</strong> <code>RabbitMQ (Tasks)</code></p>
 </li>
 <li>
+<p><strong>Operation:</strong> <code>Send a Message to RabbitMQ</code>.</p>
+</li>
+<li>
 <p><strong>Queue:</strong> <code>task_created</code> (la misma cola que el worker de P5 escucha).</p>
 </li>
 <li>
-<p><strong>Data to Send:</strong> <code>JSON</code></p>
+<p>En el parámetro <strong>Message</strong>, envíe el cuerpo como JSON. En el Webhook Trigger, el cuerpo suele estar en <code>{{ $json.body }}</code>; si el parámetro requiere texto, use <code>{{ JSON.stringify($json.body) }}</code>.</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>Asegúrese de que la entrada del nodo <code>RabbitMQ</code> esté conectada al <code>Webhook</code>. n8n enviará automáticamente los datos JSON del webhook como cuerpo del mensaje.</p>
+<p>Guarde el flujo. Para probar con la <strong>Test URL</strong>, deje abierto <strong>Listen for test event</strong>; para usar la <strong>Production URL</strong>, publique/active el flujo.</p>
 </li>
 <li>
-<p>Guarde y active este flujo.</p>
-</li>
-<li>
-<p>Abra una terminal y use <code>curl</code> para probar el webhook, simulando una nueva tarea:
+<p>Abra una terminal y use <code>curl</code> con la URL copiada del nodo:
 [source,bash]
 ----
 curl -X POST -H "Content-Type: application/json" \
      -d '{"title": "Tarea enviada por Webhook n8n", "description": "A cola RabbitMQ"}' \
-     <a href="http://&lt;su-ip-n8n&gt;:5678/webhook-test/&#8230;&#8203" class="bare">http://&lt;su-ip-n8n&gt;:5678/webhook-test/&#8230;&#8203</a>;..
-----</p>
+     <a href="http://&lt;host-accesible-de-n8n&gt;:5678/webhook-test/&lt;ruta-mostrada-en-el-nodo&gt" class="bare">http://&lt;host-accesible-de-n8n&gt;:5678/webhook-test/&lt;ruta-mostrada-en-el-nodo&gt</a>;
+----
+Si usa la URL de producción, sustituya <code>/webhook-test/</code> por <code>/webhook/</code> y asegúrese de que el flujo esté activo.</p>
 </li>
 <li>
-<p>Mire los logs del <code>docker-compose</code> (ejecutando <code>docker-compose logs -f worker</code>). Debería ver al <strong>worker de Python</strong> de la Práctica 5 recibir y procesar el mensaje enviado por n8n:
-<code>[x] Recibido y procesado nuevo task: &#8230;&#8203; Título='Tarea enviada por Webhook n8n'</code></p>
+<p>Mire los logs de Compose (ejecutando <code>docker compose logs -f worker</code>). El <strong>worker de Python</strong> de la Práctica 5 debería registrar <code>Tarea recibida: ID=None, Título='Tarea enviada por Webhook n8n'</code>. El mensaje enviado directamente a RabbitMQ no crea por sí mismo una fila en PostgreSQL.</p>
 </li>
 </ol>
 </div>
@@ -915,6 +923,9 @@ curl -X POST -H "Content-Type: application/json" \
 <li>
 <p><strong>Value:</strong> <code>n8n_consumidor</code></p>
 </li>
+<li>
+<p>Active <strong>Include Other Input Fields</strong> para conservar el contenido del mensaje en la salida.</p>
+</li>
 </ul>
 </div>
 </li>
@@ -922,23 +933,16 @@ curl -X POST -H "Content-Type: application/json" \
 <p>Guarde y active este flujo.</p>
 </li>
 <li>
-<p>Vuelva a ejecutar el <code>curl</code> del paso anterior.</p>
+<p>Para observar el consumo por n8n sin competencia, detenga temporalmente el worker de Python con <code>docker compose stop worker</code>.</p>
 </li>
 <li>
-<p>Ahora, ocurrirán dos cosas (consumo en competencia):</p>
-<div class="ulist">
-<ul>
-<li>
-<p>El worker de Python puede recibir el mensaje (verá el log en <code>docker-compose logs -f worker</code>).</p>
+<p>Active el flujo "Consumidor de Tareas" y envíe un mensaje nuevo con el <code>curl</code> del flujo A. Si vuelve a usar la <strong>Test URL</strong>, pulse antes <strong>Listen for test event</strong> otra vez; la URL de producción puede reutilizarse mientras el flujo esté activo.</p>
 </li>
 <li>
-<p>O bien, el flujo "Consumidor de Tareas" de n8n recibirá el mensaje.</p>
-</li>
-</ul>
-</div>
+<p>Vaya a "Executions" en n8n e inspeccione el mensaje recibido.</p>
 </li>
 <li>
-<p>Vaya a la pestaña "Executions" de n8n. Debería ver una nueva ejecución para el flujo "Consumidor de Tareas", con los datos de la tarea que envió con <code>curl</code>.</p>
+<p>Reinicie el worker con <code>docker compose start worker</code>. Si ambos consumidores están activos al mismo tiempo, cada mensaje lo recibirá solo uno de ellos; RabbitMQ no lo duplica.</p>
 </li>
 </ol>
 </div>
@@ -995,7 +999,7 @@ curl -X POST -H "Content-Type: application/json" \
 <p>Cuando reciba un mensaje, el flujo debe usar un nodo <code>Send Email</code> (o Slack, etc.) para notificar que la tarea ha sido completada, incluyendo el título de la tarea en el cuerpo del mensaje.</p>
 </li>
 <li>
-<p>Asegúrese de que el <code>worker</code> de Python de la P5 <strong>no</strong> esté escuchando en esta cola, para que n8n sea el único consumidor.</p>
+<p>En la implementación de referencia de P5, el worker de Python también escucha en <code>task_completed</code>. Deténgalo temporalmente (<code>docker compose stop worker</code>) o quite ese consumidor mientras prueba n8n; si ambos están activos competirán por los mensajes y cada mensaje se entregará a uno solo.</p>
 </li>
 </ol>
 </div>
@@ -1009,22 +1013,22 @@ curl -X POST -H "Content-Type: application/json" \
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Cree un nuevo flujo de trabajo que comience con un <code>Webhook Trigger</code>.</p>
+<p>Cree un flujo con un <code>Webhook Trigger</code> configurado para <code>POST</code> y una ruta propia (por ejemplo, <code>tasks-from-n8n</code>). El cuerpo recibido tendrá <code>title</code> y <code>description</code>, accesibles normalmente como <code>{{ $json.body.title }}</code> y <code>{{ $json.body.description }}</code>.</p>
 </li>
 <li>
-<p>El flujo recibirá un JSON con <code>title</code> y <code>description</code> (igual que la API de Flask).</p>
+<p>Valide que <code>title</code> sea una cadena no vacía. Para datos inválidos, devuelva una respuesta HTTP <code>400</code> mediante un nodo <code>Respond to Webhook</code>; <code>Stop and Error</code> detiene la ejecución con error, pero no genera por sí mismo una respuesta <code>400</code> controlada.</p>
 </li>
 <li>
-<p>Use un nodo <code>PostgreSQL</code> (Insert) para insertar la nueva tarea en la tabla <code>task</code>.</p>
+<p>En la rama válida, use un nodo <code>PostgreSQL</code> (<code>Insert</code>) para insertar en <code>task</code> las columnas <code>title</code> y <code>description</code>. Compruebe que el resultado del nodo incluye la fila insertada y su <code>id</code>; si usa una consulta, utilice <code>INSERT &#8230;&#8203; RETURNING id, title, description, done</code> y parámetros en vez de concatenar valores en SQL.</p>
 </li>
 <li>
-<p>Use un nodo <code>RabbitMQ</code> (Send) para publicar los datos de la tarea recién creada (incluyendo la <code>id</code> devuelta por el nodo de inserción) en la cola <code>task_created</code>.</p>
+<p>Use un nodo <code>RabbitMQ</code> para publicar la fila insertada como JSON en <code>task_created</code>. El mensaje debe conservar los campos superiores <code>id</code>, <code>title</code>, <code>description</code> y <code>done</code>, ya que el worker de P5 espera <code>title</code> en el objeto raíz.</p>
 </li>
 <li>
-<p>Configure el nodo <code>Webhook Trigger</code> para que responda inmediatamente con los datos de la tarea creada (simulando la respuesta <code>201 Created</code> de la API).</p>
+<p>En el Webhook seleccione la respuesta <strong>Using 'Respond to Webhook' Node</strong>. Conecte un nodo <code>Respond to Webhook</code> después de la inserción y la publicación; devuelva la tarea creada y el código HTTP <code>201</code>. No seleccione <strong>Immediately</strong>, porque esa opción solo devuelve <code>Workflow got started</code> sin esperar los datos.</p>
 </li>
 <li>
-<p>(Bonus) Añada un <code>IF</code> para validar que el campo <code>title</code> existe, y use un nodo <code>Stop and Error</code> si no es así, simulando la respuesta <code>400 Bad Request</code>.</p>
+<p>Pruebe el endpoint con la <strong>Test URL</strong> mientras el nodo está en <strong>Listen for test event</strong>. Para uso normal, active el flujo y llame a la <strong>Production URL</strong> (<code>/webhook/&#8230;&#8203;</code>).</p>
 </li>
 </ol>
 </div>
@@ -1061,7 +1065,7 @@ curl -X POST -H "Content-Type: application/json" \
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-11-05 10:04:55 +0100
+Last updated 2026-11-09 18:54:46 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
